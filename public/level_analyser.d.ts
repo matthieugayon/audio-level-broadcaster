@@ -1,6 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+* A simple level analyser that calculates the peak, RMS and peak hold levels of an audio signal.
 */
 export class LevelAnalyser {
   free(): void;

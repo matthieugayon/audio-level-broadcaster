@@ -1,7 +1,10 @@
 import { create } from 'zustand';
-import { BOLD_MARKERS, MEDIUM_MAKERS, MIN_DB, dbNormal, scaleNormal } from './helpers/decibel';
+import {
+  BOLD_MARKERS, MEDIUM_MAKERS, MIN_DB,
+  dbToNormal, getMarkerBottomPosition, scaleNormal, scaleNormalInv
+} from './helpers/decibel';
 
-const TWO_FRAMES = 3000/60;
+const TWO_FRAMES_MS = 2000/60;
 
 interface VizualizerApiState {
   lastLevelReception: number | null;
@@ -23,12 +26,11 @@ export const useVizualizerApi = create<VizualizerApiState>((set, get) => ({
   levels: new Float32Array([MIN_DB, MIN_DB, MIN_DB]),
   levelsCtx: null,
   markersCtx: null,
-  unityNormal: dbNormal(0),
+  unityNormal: dbToNormal(0),
 
   initSharedWorker: () => {
     const workerUrl = new URL('./workers/shared-worker.ts', import.meta.url);
     const sharedWorker = new SharedWorker(workerUrl);
-
     sharedWorker.port.start();
 
     sharedWorker.port.onmessage = (event) => {
@@ -42,7 +44,7 @@ export const useVizualizerApi = create<VizualizerApiState>((set, get) => ({
   },
   resetLevelsIfNeeded: (now: number) => {
     const { lastLevelReception } = get();
-    if (lastLevelReception && now - lastLevelReception > TWO_FRAMES) {
+    if (lastLevelReception && now - lastLevelReception > TWO_FRAMES_MS) {
       set({ levels: new Float32Array([MIN_DB, MIN_DB, MIN_DB]) });
     }
   },
@@ -54,16 +56,15 @@ export const useVizualizerApi = create<VizualizerApiState>((set, get) => ({
 
       if (levelsCtx) {
         const { width, height } = levelsCtx.canvas;
-        const availableHeight = height - 1;
-        const unityYposition = 401 - scaleNormal(unityNormal, availableHeight);
+        const unityYposition = scaleNormalInv(unityNormal, height);
 
         // Background
         levelsCtx.fillStyle = '#111111';
-        levelsCtx.fillRect(0, 0.5, width, availableHeight);
+        levelsCtx.fillRect(0, 0, width, height);
 
         // Level
-        const levelHeight = scaleNormal(dbNormal(levels[0]), availableHeight);
-        const levelGradient = levelsCtx.createLinearGradient(0, 1, 0, height);
+        const levelHeight = scaleNormal(dbToNormal(levels[0]), height);
+        const levelGradient = levelsCtx.createLinearGradient(0, 0, 0, height);
         levelGradient.addColorStop(0, '#F42542'); // color at 6db
         levelGradient.addColorStop(1 - unityNormal - 0.001, '#FFB227'); // color just above 0db
         levelGradient.addColorStop(1 - unityNormal, '#53BE00');
@@ -73,8 +74,8 @@ export const useVizualizerApi = create<VizualizerApiState>((set, get) => ({
         levelsCtx.fill();
 
         // Rms
-        const rmsHeight = scaleNormal(dbNormal(levels[1]), availableHeight);
-        const rmsGradient = levelsCtx.createLinearGradient(0, 1, 0, height);
+        const rmsHeight = scaleNormal(dbToNormal(levels[1]), height);
+        const rmsGradient = levelsCtx.createLinearGradient(0, 0, 0, height);
         rmsGradient.addColorStop(0, '#F42542'); // color at 6db
         rmsGradient.addColorStop(1 - unityNormal - 0.001, '#FFB227'); // color just above 0db
         rmsGradient.addColorStop(1 - unityNormal, '#89FA32'); // color at 0db // dark 53BE00
@@ -84,7 +85,7 @@ export const useVizualizerApi = create<VizualizerApiState>((set, get) => ({
         levelsCtx.fill();
 
         // Hold peak, if not at unity
-        const holdPeakHeight = scaleNormal(dbNormal(levels[2]), availableHeight);
+        const holdPeakHeight = scaleNormal(dbToNormal(levels[2]), height);
         if (Math.round(holdPeakHeight) !== unityYposition && Math.ceil(holdPeakHeight) !== unityYposition) {
           levelsCtx.fillStyle = rmsGradient; // same as rms
           levelsCtx.fillRect(0, height - holdPeakHeight, width, 1);
@@ -95,12 +96,13 @@ export const useVizualizerApi = create<VizualizerApiState>((set, get) => ({
         levelsCtx.strokeStyle = '#fff'; // same as app background
         // 0 db horizontal line
         levelsCtx.beginPath();
-        levelsCtx.moveTo(0, unityYposition - 0.5);
-        levelsCtx.lineTo(width, unityYposition - 0.5);
+        levelsCtx.moveTo(0, unityYposition + 0.5);
+        levelsCtx.lineTo(width, unityYposition + 0.5);
         levelsCtx.stroke();
         // vertical line in the middle
         levelsCtx.beginPath();
-        levelsCtx.moveTo(width * 0.5 - 0.5, 0.5);
+        levelsCtx.moveTo(width * 0.5 - 0.5, 0.5); // straddle pixels with 0.5 for lines
+
         levelsCtx.lineTo(width * 0.5 - 0.5, height);
         levelsCtx.stroke();
       }
@@ -116,24 +118,24 @@ export const useVizualizerApi = create<VizualizerApiState>((set, get) => ({
     const { markersCtx } = get();
     if (markersCtx) {
       const { width, height } = markersCtx.canvas;
-      const availableHeight = height - 1;
       markersCtx.clearRect(0, 0, width, height);
+      markersCtx.lineWidth = 1;
       markersCtx.strokeStyle = 'black';
 
       BOLD_MARKERS.forEach((dbValue) => {
-        // straddle pixels with 0.5 for lines
-        const yPosition = height - scaleNormal(dbNormal(dbValue), availableHeight) - 0.5;
+        const yPosition = height - getMarkerBottomPosition(dbValue, height);
         markersCtx.beginPath();
         markersCtx.moveTo(0, yPosition);
         markersCtx.lineTo(width, yPosition);
         markersCtx.stroke();
       });
 
+      // light gray lines
       markersCtx.strokeStyle = '#888';
 
       MEDIUM_MAKERS.forEach((dbValue) => {
         // straddle pixels with 0.5 for lines
-        const yPosition = height - scaleNormal(dbNormal(dbValue), availableHeight) - 0.5;
+        const yPosition = height - getMarkerBottomPosition(dbValue, height);
         markersCtx.beginPath();
         markersCtx.moveTo(0, yPosition);
         markersCtx.lineTo(width, yPosition);

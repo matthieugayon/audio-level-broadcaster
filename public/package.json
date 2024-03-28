@@ -1,0 +1,17 @@
+{
+  "name": "level-analyser",
+  "collaborators": [
+    "Matthieu Gayon <matthieu.gayon@gmail.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "level_analyser_bg.wasm",
+    "level_analyser.js",
+    "level_analyser.d.ts"
+  ],
+  "module": "level_analyser.js",
+  "types": "level_analyser.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

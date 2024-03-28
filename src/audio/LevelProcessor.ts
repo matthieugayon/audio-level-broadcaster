@@ -1,7 +1,11 @@
 import './AudioWorkletProcessor.types';
-// import './TextEncoder';
 import init, { LevelAnalyser } from '../../public/level_analyser';
 import { Event} from './LevelNode';
+
+/**
+ * Level Processor
+ * the audio worklet processor function loaded in the audio thread
+ */
 
 // at 44.1kHz, 512 samples is 11.6ms, 86 FPS
 // at 48kHz, 512 samples is 10.7ms, 93 FPS
@@ -29,9 +33,9 @@ class LevelProcessor extends AudioWorkletProcessor {
     } else if (event.type === 'init') {
       this._levelAnalyser = LevelAnalyser.new(sampleRate);
     }
-  };
+  }
 
-  process(inputs: Float32Array[][], _outputs: Float32Array[][]) {
+  process(inputs: Float32Array[][]) {
     if (!this._levelAnalyser) return true;
 
     // This example only handles mono channel.
@@ -40,7 +44,6 @@ class LevelProcessor extends AudioWorkletProcessor {
 
     // Broadcast only every BROADCAST_RATE frames to avoid flooding the main thread.
     // if frameSize > BROADCAST_RATE, broadcast every frame
-
     const frameSize = inputChannelData.length;
     if (frameSize < BROADCAST_RATE) {
       this._accumulatedFrameSize += (this._accumulatedFrameSize + frameSize) % BROADCAST_RATE;

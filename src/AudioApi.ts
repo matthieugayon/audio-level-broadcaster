@@ -1,8 +1,11 @@
 import { create } from 'zustand';
 import LevelNode from './audio/LevelNode';
-import { MIN_DB } from './helpers/decibel';
 
-export const LEVEL_PROCESSOR = 'level-processor';
+/**
+ * Audio store API
+ * This store is used to manage the audio context and the audio graph
+ * as well as communicating with the shared worker
+ */
 
 interface AudioApiState {
   audioContext: AudioContext | null;
@@ -15,7 +18,6 @@ interface AudioApiState {
   setGain: (gain: number) => void;
   setupLevelProcessor: (actx: AudioContext) => Promise<AudioWorkletNode>;
   broadcastLevels: (buffer: Float32Array) => void;
-  silence: () => void;
 }
 
 export const useAudioApi = create<AudioApiState>((set, get) => ({
@@ -40,7 +42,7 @@ export const useAudioApi = create<AudioApiState>((set, get) => ({
     set({ gainNode })
     const levelProcessorNode = await setupLevelProcessor(actx);
 
-    // audio pipeline
+    // audio graph pipeline
     source.connect(gainNode);
     gainNode.connect(levelProcessorNode);
     levelProcessorNode.connect(actx.destination);
@@ -56,10 +58,11 @@ export const useAudioApi = create<AudioApiState>((set, get) => ({
       const wasmBytes = await response.arrayBuffer();
 
       try {
+        // register the audio worklet processor
         await actx.audioWorklet.addModule(levelProcessorUrl);
-      } catch (e: any) {
+      } catch (e: unknown) {
         throw new Error(
-          `Failed to load level processor worklet at url: ${levelProcessorUrl}. Further info: ${e.message}`
+          `Failed to load level processor worklet at url: ${levelProcessorUrl}. Further info: ${e}`
         );
       }
 
@@ -67,9 +70,9 @@ export const useAudioApi = create<AudioApiState>((set, get) => ({
       // Initialize the audio worklet with the WASM module and the broadcast function.
       levelNode.init(wasmBytes, broadcastLevels);
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       throw new Error(
-        `Failed to load level processor WASM module. Further info: ${e.message}`
+        `Failed to load level processor WASM module. Further info: ${e}`
       );
     }
 
@@ -89,15 +92,11 @@ export const useAudioApi = create<AudioApiState>((set, get) => ({
   broadcastLevels: (buffer: Float32Array) => {
     // driven from postMessage called from audio thread
     // it is fine as we call postMessage with a transferable array (which avoids serialization and copy overhead)
-    // AND at a lower rate
+    // AND at a lower rate, in our case every 512 samples, which is 10.7ms at 48kHz
     const { broadcaster } = get();
     if (broadcaster) {
       // transfer the buffer to the worker thread to avoid copying
       broadcaster.postMessage(buffer.buffer, [buffer.buffer]);
     }
-  },
-  silence: () => {
-    const { broadcastLevels } = get();
-    broadcastLevels(new Float32Array([MIN_DB, MIN_DB, MIN_DB]));
   }
 }));

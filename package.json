@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "compile-wasm": "wasm-pack build ./level-analyser --target web  --out-dir ../public",
+    "clean-public": "rm public/.gitignore",
+    "wasm": "npm run compile-wasm && npm run clean-public"
   },
   "dependencies": {
     "fastestsmallesttextencoderdecoder": "^1.0.22",

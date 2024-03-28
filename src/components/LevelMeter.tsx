@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useVizualizerApi } from '../VizualizerApi';
-import { BOLD_MARKERS, MEDIUM_MAKERS, dbNormal } from '../helpers/decibel';
+import {
+  BOLD_MARKERS, MEDIUM_MAKERS, getMarkerBottomPosition
+} from '../helpers/decibel';
+
+const LEVEL_METER_HEIGHT = 400;
 
 const LevelMeter: React.FC = () => {
   const levelsCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -32,8 +36,8 @@ const LevelMeter: React.FC = () => {
   return (
     <div className="flex justify-center items-center h-screen">
       <div className="flex justify-center space-x-1">
-        <canvas ref={levelsCanvasRef} width={30} height={401} />
-        <canvas ref={markersCanvasRef} width={6} height={401} />
+        <canvas ref={levelsCanvasRef} width={30} height={LEVEL_METER_HEIGHT} />
+        <canvas ref={markersCanvasRef} width={6} height={LEVEL_METER_HEIGHT} />
 
         {/* CANVAS is extremely slow at drawing text so we display it with html and css */}
         <div className="relative" style={{ width: 13, padding: 1 }}>
@@ -41,7 +45,7 @@ const LevelMeter: React.FC = () => {
             <div
               key={dbValue}
               className="absolute w-full text-right text-markers"
-              style={{ bottom: Math.round(dbNormal(dbValue) * 400) - 3.5 }}
+              style={{ bottom: getMarkerBottomPosition(dbValue, LEVEL_METER_HEIGHT) - 3.5 }}
             >
               {Math.abs(dbValue)}
             </div>
@@ -51,7 +55,7 @@ const LevelMeter: React.FC = () => {
             <div
               key={dbValue}
               className="absolute w-full text-right text-markers gray-300"
-              style={{ bottom: Math.round(dbNormal(dbValue) * 400) - 3.5 }}
+              style={{ bottom: getMarkerBottomPosition(dbValue, LEVEL_METER_HEIGHT) - 3.5 }}
             >
               {Math.abs(dbValue)}
             </div>

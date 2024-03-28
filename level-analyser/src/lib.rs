@@ -3,7 +3,7 @@ use std::f32::consts::E;
 
 use wasm_bindgen::prelude::*;
 
-const BLOCK_SIZE: usize = 1025;
+const BLOCK_SIZE: usize = 1024;
 const MIN_DB: f32 = -72.;
 const MAX_DB: f32 = 6.;
 
@@ -19,6 +19,8 @@ extern "C" {
   #[wasm_bindgen(js_namespace = console, js_name = log)]
   fn log_vec_f32(v: Vec<f32>);
 }
+
+/// A simple level analyser that calculates the peak, RMS and peak hold levels of an audio signal.
 
 #[wasm_bindgen]
 pub struct LevelAnalyser {
@@ -56,6 +58,7 @@ impl LevelAnalyser {
     ]
   }
 
+  /// Calculates the peak and hold peak levels of an audio signal.
   fn peaks(&mut self, audio_samples: Vec<f32>, refresh_rate: f32) -> (f32, f32) {
     let mut block_peak = 0.;
     for &sample in audio_samples.iter() {
@@ -71,6 +74,7 @@ impl LevelAnalyser {
     (20.0 * peak.log10(), 20.0 * hold_peak.log10())
   }
 
+  /// Calculates the RMS level of an audio signal.
   fn rms(&mut self, refresh_rate: f32) -> f32 {
     let sum_of_squares = self.buffer.iter().map(|x| x * x).sum::<f32>();
     let mut rms = (sum_of_squares / BLOCK_SIZE as f32).sqrt();
@@ -81,6 +85,7 @@ impl LevelAnalyser {
   }
 }
 
+/// A circular buffer, fed with incoming buffers, always keep the last BLOCK_SIZE samples.
 struct CircularBuffer {
   buffer: [f32; BLOCK_SIZE], // Holds the audio samples
   write_position: usize, // Current position in buffer where next sample will be written
@@ -116,6 +121,8 @@ impl CircularBuffer {
   }
 }
 
+/// An envelope follower that calculates the envelope of an audio signal.
+/// The envelope follower has attack, release and hold times
 struct EnvelopeFollower {
   attack_time: f32,
   release_time: f32,
@@ -137,9 +144,9 @@ impl EnvelopeFollower {
     }
   }
 
-  // because we cannot know the bloc size at init time
-  // we must pass the refresh rate to the process method
-  // and calculate the attack and release coefficients
+  /// because we can't know the bloc size at init time
+  /// we must pass the refresh rate to the process method
+  /// and calculate the attack and release coefficients
   fn process(&mut self, input: f32, refresh_rate: f32) -> f32 {
     let attack_coeff = 1.0 - E.powf(-1.0 / (self.attack_time / 1000.0 * refresh_rate * 0.5));
     let release_coeff = 1.0 - E.powf(-1.0 / (self.release_time / 1000.0 * refresh_rate * 0.5));

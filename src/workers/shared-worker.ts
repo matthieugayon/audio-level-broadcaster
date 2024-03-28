@@ -1,4 +1,10 @@
 /// <reference lib="webworker" />
+
+/**
+ * Shared worker
+ * Used to enable communication between browsing contexts
+ */
+
 const _self: SharedWorkerGlobalScope = self as any;
 
 const ports: MessagePort[] = [];

@@ -1,3 +1,9 @@
+/**
+ * Level Node
+ * the audio worklet node that will be used to process the audio data
+ * main thread interface with the underlying audio processor
+ */
+
 export interface Event {
   type: 'wasm-module' | 'init',
   wasmBytes?: ArrayBuffer,
@@ -5,7 +11,7 @@ export interface Event {
 }
 
 export default class LevelNode extends AudioWorkletNode {
-  _broadcast = (_samples: Float32Array) => {};
+  _broadcast: ((buffer: Float32Array) => void) | null = null;
 
   init(wasmBytes: ArrayBuffer, broadcast: (buffer: Float32Array) => void) {
     // Listen to messages sent from the audio processor.
@@ -24,7 +30,7 @@ export default class LevelNode extends AudioWorkletNode {
       this.postMessage({
         type: 'init'
       });
-    } else {
+    } else if (this._broadcast) {
       this._broadcast(event);
     }
   }
