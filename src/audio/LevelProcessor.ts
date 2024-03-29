@@ -31,8 +31,6 @@ class LevelProcessor extends AudioWorkletProcessor {
         this.port.postMessage({ type: 'wasm-loaded' });
       });
     } else if (event.type === 'init') {
-      console.log("init");
-
       this._levelAnalyser = LevelAnalyser.new(sampleRate);
     }
   }
@@ -40,12 +38,9 @@ class LevelProcessor extends AudioWorkletProcessor {
   process(inputs: Float32Array[][]) {
     if (!this._levelAnalyser) return true;
 
-    console.log("process", inputs);
-
-
     // This example only handles mono channel.
     const inputChannelData = inputs[0][0];
-    let result = this._levelAnalyser.process(inputChannelData);
+    const result = this._levelAnalyser.process(inputChannelData);
 
     // Broadcast only every BROADCAST_RATE frames to avoid flooding the main thread.
     // if frameSize > BROADCAST_RATE, broadcast every frame
@@ -65,6 +60,5 @@ class LevelProcessor extends AudioWorkletProcessor {
     return true;
   }
 }
-
 
 registerProcessor('level-processor', LevelProcessor);

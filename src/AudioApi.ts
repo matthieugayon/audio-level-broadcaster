@@ -20,7 +20,6 @@ interface AudioApiState {
   setGain: (gain: number) => void;
   setupLevelProcessor: (actx: AudioContext) => Promise<AudioWorkletNode>;
   broadcastLevels: (buffer: Float32Array) => void;
-  silence: () => void;
 }
 
 export const useAudioApi = create<AudioApiState>((set, get) => ({
@@ -109,13 +108,6 @@ export const useAudioApi = create<AudioApiState>((set, get) => ({
       // include the id for client to be able to track the sender
       const payload = { id, buffer: buffer.buffer };
       broadcaster.postMessage(payload, [payload.buffer]); // we specify the buffer to transfer
-    }
-  },
-  silence: () => {
-    const { broadcaster } = get();
-
-    if (broadcaster) {
-      broadcaster.postMessage("silence");
     }
   }
 }));

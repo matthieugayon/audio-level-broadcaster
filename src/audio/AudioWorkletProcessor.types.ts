@@ -7,10 +7,13 @@
  */
 
 /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/AudioWorkletGlobalScope/currentFrame) */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 declare const currentFrame: number;
 /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/AudioWorkletGlobalScope/currentTime) */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 declare const currentTime: number;
 /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/AudioWorkletGlobalScope/sampleRate) */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 declare const sampleRate: number;
 /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/AudioWorkletGlobalScope/registerProcessor) */
 
@@ -32,6 +35,7 @@ type AudioParamDescriptor = {
   defaultValue?: number
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 declare function registerProcessor(
   name: string,
   processorCtor: (new (

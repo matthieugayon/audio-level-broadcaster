@@ -24,6 +24,7 @@ export default class LevelNode extends AudioWorkletNode {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onmessage(event: any) {
     if (event?.type === 'wasm-loaded') {
       this.postMessage({

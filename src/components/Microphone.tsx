@@ -12,10 +12,6 @@ const Microphone: React.FC = () => {
     audioApi.initGraph()
       .catch((e) => console.error(e))
       .then(() => console.log('Audio graph initialized'));
-
-    return () => {
-      audioApi.silence();
-    }
   }, []);
 
   const { gain, setGain } = useAudioApi(
