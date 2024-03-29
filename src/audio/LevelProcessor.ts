@@ -31,12 +31,17 @@ class LevelProcessor extends AudioWorkletProcessor {
         this.port.postMessage({ type: 'wasm-loaded' });
       });
     } else if (event.type === 'init') {
+      console.log("init");
+
       this._levelAnalyser = LevelAnalyser.new(sampleRate);
     }
   }
 
   process(inputs: Float32Array[][]) {
     if (!this._levelAnalyser) return true;
+
+    console.log("process", inputs);
+
 
     // This example only handles mono channel.
     const inputChannelData = inputs[0][0];
@@ -60,5 +65,6 @@ class LevelProcessor extends AudioWorkletProcessor {
     return true;
   }
 }
+
 
 registerProcessor('level-processor', LevelProcessor);

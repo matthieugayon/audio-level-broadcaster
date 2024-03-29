@@ -12,6 +12,10 @@ const Microphone: React.FC = () => {
     audioApi.initGraph()
       .catch((e) => console.error(e))
       .then(() => console.log('Audio graph initialized'));
+
+    return () => {
+      audioApi.silence();
+    }
   }, []);
 
   const { gain, setGain } = useAudioApi(
@@ -40,7 +44,7 @@ const Microphone: React.FC = () => {
         <div className='gain-value'>{parseFloat((20 * Math.log10(gain)).toFixed())} dB</div>
       </div>
 
-      <FloatingButton url={'/level-meter'} />
+      <FloatingButton url='/level-meter' label='open level in new tab' />
     </div>
   );
 };

@@ -7,6 +7,7 @@ import {
 const TWO_FRAMES_MS = 2000/60;
 
 interface VizualizerApiState {
+  listenedSenderId: string | null;
   lastLevelReception: number | null;
   levels: Float32Array;
   levelsCtx: CanvasRenderingContext2D | null;
@@ -15,6 +16,7 @@ interface VizualizerApiState {
 
   initSharedWorker: () => void;
   setLevelsCanvasContext: (ctx: CanvasRenderingContext2D) => void,
+  setLevels: (levels: ArrayBuffer) => void,
   resetLevelsIfNeeded: (now: number) => void,
   drawLevels: () => void,
   setMarkersCanvasContext: (ctx: CanvasRenderingContext2D) => void,
@@ -22,6 +24,7 @@ interface VizualizerApiState {
 }
 
 export const useVizualizerApi = create<VizualizerApiState>((set, get) => ({
+  listenedSenderId: null, // used to track sender id of the first worker that sends levels
   lastLevelReception: null,
   levels: new Float32Array([MIN_DB, MIN_DB, MIN_DB]),
   levelsCtx: null,
@@ -34,22 +37,40 @@ export const useVizualizerApi = create<VizualizerApiState>((set, get) => ({
     sharedWorker.port.start();
 
     sharedWorker.port.onmessage = (event) => {
-      if (event?.data instanceof ArrayBuffer) {
-        const levels = new Float32Array(event.data as ArrayBuffer);
-        const now = performance.now();
-
-        set({ levels, lastLevelReception: now });
+      const { listenedSenderId, setLevels } = get();
+      const senderId = event.data?.id;
+      const levelData = event.data?.buffer;
+      if (senderId && levelData) {
+        if (!listenedSenderId) {
+          set({ listenedSenderId: event.data.id });
+          setLevels(levelData);
+        } else if (listenedSenderId === senderId) {
+          // by only updating levels if the sender id matches the first sender id
+          // we avoid updating the levels with multiple senders (and therefore we avoid rendering flickering)
+          // and only focus on the first sender
+          setLevels(levelData);
+        }
       }
     };
+  },
+  setLevels: (levelData) => {
+    const levels = new Float32Array(levelData);
+    const now = performance.now();
+    set({ levels, lastLevelReception: now });
   },
   resetLevelsIfNeeded: (now: number) => {
     const { lastLevelReception } = get();
     if (lastLevelReception && now - lastLevelReception > TWO_FRAMES_MS) {
-      set({ levels: new Float32Array([MIN_DB, MIN_DB, MIN_DB]) });
+      // if we haven't received levels for more than 2 frames, reset levels
+      // and free the listened sender id
+      set({
+        levels: new Float32Array([MIN_DB, MIN_DB, MIN_DB]),
+        lastLevelReception: null,
+        listenedSenderId: null
+      });
     }
   },
   drawLevels: () => {
-
     const draw = () => {
       const { levelsCtx, levels, unityNormal, resetLevelsIfNeeded } = get();
       resetLevelsIfNeeded(performance.now());

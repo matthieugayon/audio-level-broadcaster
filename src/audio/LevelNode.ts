@@ -26,7 +26,6 @@ export default class LevelNode extends AudioWorkletNode {
 
   onmessage(event: any) {
     if (event?.type === 'wasm-loaded') {
-      console.log('WASM loaded');
       this.postMessage({
         type: 'init'
       });

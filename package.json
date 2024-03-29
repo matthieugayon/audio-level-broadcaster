@@ -13,7 +13,6 @@
     "wasm": "npm run compile-wasm && npm run clean-public"
   },
   "dependencies": {
-    "fastestsmallesttextencoderdecoder": "^1.0.22",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",

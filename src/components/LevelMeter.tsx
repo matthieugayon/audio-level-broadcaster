@@ -3,6 +3,7 @@ import { useVizualizerApi } from '../VizualizerApi';
 import {
   BOLD_MARKERS, MEDIUM_MAKERS, getMarkerBottomPosition
 } from '../helpers/decibel';
+import FloatingButton from './FloatingButton';
 
 const LEVEL_METER_HEIGHT = 400;
 
@@ -62,6 +63,8 @@ const LevelMeter: React.FC = () => {
           ))}
         </div>
       </div>
+
+      <FloatingButton url='/' label='open microphone in new tab' />
     </div>
   );
 };

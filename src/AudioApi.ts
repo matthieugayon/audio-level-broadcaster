@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { v4 as uuid } from 'uuid';
 import LevelNode from './audio/LevelNode';
 
 /**
@@ -8,6 +9,7 @@ import LevelNode from './audio/LevelNode';
  */
 
 interface AudioApiState {
+  id: string;
   audioContext: AudioContext | null;
   broadcaster: MessagePort | null;
   gainNode: GainNode | null;
@@ -18,9 +20,11 @@ interface AudioApiState {
   setGain: (gain: number) => void;
   setupLevelProcessor: (actx: AudioContext) => Promise<AudioWorkletNode>;
   broadcastLevels: (buffer: Float32Array) => void;
+  silence: () => void;
 }
 
 export const useAudioApi = create<AudioApiState>((set, get) => ({
+  id: uuid(),
   audioContext: null,
   broadcaster: null,
   gainNode: null,
@@ -67,6 +71,7 @@ export const useAudioApi = create<AudioApiState>((set, get) => ({
       }
 
       levelNode = new LevelNode(actx, 'level-processor');
+
       // Initialize the audio worklet with the WASM module and the broadcast function.
       levelNode.init(wasmBytes, broadcastLevels);
 
@@ -75,6 +80,9 @@ export const useAudioApi = create<AudioApiState>((set, get) => ({
         `Failed to load level processor WASM module. Further info: ${e}`
       );
     }
+
+    // does not resume automatically in chrome
+    actx.resume();
 
     return levelNode;
   },
@@ -90,13 +98,24 @@ export const useAudioApi = create<AudioApiState>((set, get) => ({
     }
   },
   broadcastLevels: (buffer: Float32Array) => {
+    const { id } = get();
     // driven from postMessage called from audio thread
     // it is fine as we call postMessage with a transferable array (which avoids serialization and copy overhead)
     // AND at a lower rate, in our case every 512 samples, which is 10.7ms at 48kHz
     const { broadcaster } = get();
     if (broadcaster) {
+
       // transfer the buffer to the worker thread to avoid copying
-      broadcaster.postMessage(buffer.buffer, [buffer.buffer]);
+      // include the id for client to be able to track the sender
+      const payload = { id, buffer: buffer.buffer };
+      broadcaster.postMessage(payload, [payload.buffer]); // we specify the buffer to transfer
+    }
+  },
+  silence: () => {
+    const { broadcaster } = get();
+
+    if (broadcaster) {
+      broadcaster.postMessage("silence");
     }
   }
 }));

@@ -14,7 +14,11 @@ _self.onconnect = function (e) {
 
   ports.push(port);
 
+  console.log("New client", port);
+
   port.addEventListener("message", function (message) {
+    console.log("Shared worker received message", message);
+
     ports.forEach(port => {
       port.postMessage(message.data);
     });
