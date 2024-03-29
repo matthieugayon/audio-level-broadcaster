@@ -6,6 +6,13 @@ It is a react application, and it is structured around two routes each using the
 
 These stores, using the zustand library, are exposed as hooks and can therefore be used to manage the components state, but they also hold audio and canvas logic.
 
+## Get started
+
+Run `npm run install` at the root of the project directory.
+Run `npm run dev`.
+
+Then browse http://localhost:5173/
+
 ## Audio API
 
 The audio store, hooked up to the Microphone component, exposes functions to set up the communication channel with the shared worker and to init an audio graph. For analysing the audio samples, we opted toward a low level approach using the AudioWorkletProcessor API and a custom rust based wasm module.
