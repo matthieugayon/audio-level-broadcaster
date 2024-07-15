@@ -1,8 +1,6 @@
 # Audio meter broadcaster
 
-This project is my solution for the Holoplot Front-end developer task.
-
-It is a react application, and it is structured around two routes each using their own isolated store.
+This react app is structured around two routes each using their own isolated store.
 
 These stores, using the zustand library, are exposed as hooks and can therefore be used to manage the components state, but they also hold audio and canvas logic.
 
